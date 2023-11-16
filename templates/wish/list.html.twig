@@ -4,6 +4,10 @@
     <h1>What do you want to do?</h1>
     {% for wish in wishes %}
     <div>
+        {% if wish.category %}
+            <span>[{{ wish.category.name }}]</span>
+        {% endif %}
+
     <a href="{{ path("wish_detail", {id: wish.id}) }}" title="See this wish in details">{{ wish.title }}</a>
     </div>
     {% endfor %}
