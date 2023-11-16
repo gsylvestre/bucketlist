@@ -7,9 +7,12 @@ use App\Form\WishType;
 use App\Repository\WishRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/wish')]
 class WishController extends AbstractController
@@ -43,7 +46,7 @@ class WishController extends AbstractController
     }
 
     #[Route('/create', name: 'wish_create', methods: ["GET", "POST"])]
-    public function create(Request $request, EntityManagerInterface $em): Response
+    public function create(Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
         $wish = new Wish();
         $wishForm = $this->createForm(WishType::class, $wish);
@@ -51,6 +54,25 @@ class WishController extends AbstractController
         $wishForm->handleRequest($request);
 
         if ($wishForm->isSubmitted() && $wishForm->isValid()){
+
+            /** @var UploadedFile $uploadedImage */
+            $uploadedImage = $wishForm->get('file')->getData();
+            if($uploadedImage){
+                $originalFilename = pathinfo($uploadedImage->getClientOriginalName(), PATHINFO_FILENAME);
+                // this is needed to safely include the file name as part of the URL
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedImage->guessExtension();
+
+                try {
+                    $uploadedImage->move($this->getParameter('upload_directory'), $newFilename);
+                    $wish->setFilename($newFilename);
+                } catch(FileException $exception)
+                {
+                    dd($exception);
+                }
+            }
+
+
             $em->persist($wish);
             $em->flush();
 
@@ -64,7 +86,7 @@ class WishController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'wish_edit', methods: ["GET", "POST"])]
-    public function edit(Wish $wish, Request $request, EntityManagerInterface $em): Response
+    public function edit(Wish $wish, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
         $wishForm = $this->createForm(WishType::class, $wish);
 
@@ -72,6 +94,29 @@ class WishController extends AbstractController
 
         if ($wishForm->isSubmitted() && $wishForm->isValid()){
             $wish->setDateUpdated(new \DateTimeImmutable());
+
+            //si le checkbox de suppression de l'image est coché, on supprime le fichier
+            if ($wishForm->has('deleteCb')){
+                unlink($this->getParameter('upload_directory') . '/' . $wish->getFilename());
+                $wish->setFilename(null);
+            }
+
+            /** @var UploadedFile $uploadedImage */
+            $uploadedImage = $wishForm->get('file')->getData();
+            if($uploadedImage){
+                $originalFilename = pathinfo($uploadedImage->getClientOriginalName(), PATHINFO_FILENAME);
+                // this is needed to safely include the file name as part of the URL
+                $safeFilename = $slugger->slug($originalFilename);
+                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedImage->guessExtension();
+
+                try {
+                    $uploadedImage->move($this->getParameter('upload_directory'), $newFilename);
+                    $wish->setFilename($newFilename);
+                } catch(FileException $exception)
+                {
+                    dd($exception);
+                }
+            }
 
             $em->persist($wish);
             $em->flush();

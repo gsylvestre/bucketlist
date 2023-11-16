@@ -7,6 +7,12 @@
 {% block body %}
     <h1>{{wish.title}}</h1>
 
+    {% if wish.filename %}
+    <div>
+        <img class="wish-img" src="{{ asset('uploads/images/'~wish.filename) }}" alt="Representation of {{ wish.title }}">
+    </div>
+    {% endif %}
+
     {# affiche tous les détails de l'idée #}
     <div>{{ wish.description|nl2br }}</div>
     <div>Wish created by {{ wish.author }} on {{ wish.dateCreated|date("Y-m-d") }}</div>

@@ -20,3 +20,5 @@
 ###< symfony/phpunit-bridge ###
 
 /.idea/
+
+/public/uploads/
