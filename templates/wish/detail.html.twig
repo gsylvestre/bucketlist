@@ -29,5 +29,47 @@
         <a href="{{ path('wish_delete', {'id': wish.id, 'token': csrf_token('delete-token-'~wish.id)}) }}" class="btn btn-danger">Delete</a>
         {% endif %}
     </div>
+
+    <div>
+    {% if app.user %}
+        <h2>Leave a comment!</h2>
+        {{ form_start(commentForm) }}
+        {{ form_widget(commentForm) }}
+        <button class="btn btn-secondary">Comment!</button>
+        {{ form_end(commentForm) }}
+    {% else %}
+        <h2>Login to leave a comment!</h2>
+        <a href="{{ path('app_login') }}">Login</a>
+    {% endif %}
+    </div>
+
+    <div>
+        {% for comment in wish.comments %}
+            <div>
+                <div>
+                    {% if comment.score > 0 %}
+                        {% for i in 0..(comment.score-1) %}&#9733; {% endfor %}
+                    {% endif %}
+
+                    {% if comment.score < 5 %}
+                        {% for i in comment.score..4 %}&#9734; {% endfor %}
+                    {% endif %}
+                </div>
+                <p>{{ comment.content|nl2br }}</p>
+                <div>Comment created by {{ comment.author.username }} on {{ comment.dateCreated|date("Y-m-d H:i:s") }}</div>
+                <div>
+                    {% if app.user == comment.author %}
+                    <a href="{{ path('comment_edit', {'id': comment.id}) }}">Edit</a>
+                    {% endif %}
+                    {% if app.user == comment.author or is_granted("ROLE_ADMIN") %}
+                    <a href="{{ path('comment_delete', {id: comment.id, token: csrf_token('comment-delete-'~comment.id)}) }}">Delete</a>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <p>Be the first to leave a comment!</p>
+        {% endfor %}
+    </div>
+
 {% endblock %}
 

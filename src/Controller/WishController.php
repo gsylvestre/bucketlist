@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Comment;
 use App\Entity\Wish;
+use App\Form\CommentType;
 use App\Form\WishType;
 use App\Repository\WishRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -30,9 +32,8 @@ class WishController extends AbstractController
     }
 
     #[Route('/{id}', name: 'wish_detail', requirements: ['id' => '\d+'])]
-    public function detail(int $id, WishRepository $wishRepository): Response
+    public function detail(int $id, WishRepository $wishRepository, Request $request, EntityManagerInterface $em): Response
     {
-        dump($id);
         //va chercher l'idée en bdd
         $wish = $wishRepository->findOneBy(["isPublished" => true, "id" => $id]);
 
@@ -41,8 +42,24 @@ class WishController extends AbstractController
             throw $this->createNotFoundException("This wish is not available! Sorry dude.");
         }
 
+        $comment = new Comment();
+        $commentForm = $this->createForm(CommentType::class, $comment);
+
+        $commentForm->handleRequest($request);
+        if ($commentForm->isSubmitted() && $commentForm->isValid() && $this->getUser()){
+
+            $comment->setWish($wish);
+            $comment->setAuthor($this->getUser());
+
+            $em->persist($comment);
+            $em->flush();
+            $this->addFlash("success", "Your comment has been published! Thanks!");
+            return $this->redirectToRoute("wish_detail", ["id" => $wish->getId()]);
+        }
+
         return $this->render('wish/detail.html.twig', [
-            "wish" => $wish
+            "wish" => $wish,
+            "commentForm" => $commentForm,
         ]);
     }
 
