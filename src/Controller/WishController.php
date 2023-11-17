@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
 #[Route('/wish')]
@@ -72,6 +73,8 @@ class WishController extends AbstractController
                 }
             }
 
+            //on donne en créateur l'utilisateur actuellement connecté
+            $wish->setCreator($this->getUser());
 
             $em->persist($wish);
             $em->flush();
@@ -88,6 +91,14 @@ class WishController extends AbstractController
     #[Route('/{id}/edit', name: 'wish_edit', methods: ["GET", "POST"])]
     public function edit(Wish $wish, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
     {
+        if (!$this->getUser()){
+            throw $this->createAccessDeniedException("nope");
+        }
+
+        if ($this->getUser() !== $wish->getCreator()){
+            throw $this->createAccessDeniedException("you must be the creator to edit this wish.");
+        }
+
         $wishForm = $this->createForm(WishType::class, $wish);
 
         $wishForm->handleRequest($request);
@@ -134,6 +145,10 @@ class WishController extends AbstractController
     #[Route("/{id}/delete/{token}", name: "wish_delete", requirements: ["id" => "\d+"], methods: ["GET"])]
     public function delete(Wish $wish, string $token, EntityManagerInterface $em): Response
     {
+        if ($this->getUser() !== $wish->getCreator() && !$this->isGranted("ROLE_ADMIN")){
+            throw $this->createAccessDeniedException("you must be the creator to edit this wish or be an admin.");
+        }
+
         //voir dans le twig de la page détail pour la création du token
         //ici on vérifie la validité manuellement du token csrf
         $tokenIsValid = $this->isCsrfTokenValid("delete-token-" . $wish->getId(), $token);

@@ -32,14 +32,6 @@ class Wish
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[Assert\NotBlank(message: "Please provide an username!")]
-    #[Assert\Regex(
-        pattern: "/^[a-z0-9_-]+$/i",
-        message: "Your username must match this pattern please: /^[a-z0-9_-]+$/i"
-    )]
-    #[ORM\Column(length: 50)]
-    private ?string $author = null;
-
     #[ORM\Column(nullable: true, options: ['default' => true])]
     private ?bool $isPublished = null;
 
@@ -55,13 +47,15 @@ class Wish
     #[ORM\ManyToOne(inversedBy: 'wishes')]
     private ?Category $category = null;
 
+    #[ORM\ManyToOne(inversedBy: 'wishes')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $creator = null;
 
     public function __construct()
     {
         $this->isPublished = true;
         $this->dateCreated = new \DateTimeImmutable();
     }
-
 
     public function getId(): ?int
     {
@@ -88,18 +82,6 @@ class Wish
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
-        return $this;
-    }
-
-    public function getAuthor(): ?string
-    {
-        return $this->author;
-    }
-
-    public function setAuthor(string $author): static
-    {
-        $this->author = $author;
 
         return $this;
     }
@@ -160,6 +142,18 @@ class Wish
     public function setCategory(?Category $category): static
     {
         $this->category = $category;
+
+        return $this;
+    }
+
+    public function getCreator(): ?User
+    {
+        return $this->creator;
+    }
+
+    public function setCreator(?User $creator): static
+    {
+        $this->creator = $creator;
 
         return $this;
     }

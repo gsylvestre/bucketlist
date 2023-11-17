@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use App\Entity\Category;
+use App\Entity\User;
 use App\Entity\Wish;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
@@ -25,7 +26,9 @@ class WishFixtures extends Fixture implements DependentFixtureInterface
             $wish->setTitle($faker->sentence);
             $wish->setDescription($faker->realText(500));
             $wish->setIsPublished($faker->boolean(80));
-            $wish->setAuthor($faker->userName);
+
+            //voir UserFixtures pour la création des références
+            $wish->setCreator($this->getReference("user".$faker->numberBetween(1,10), User::class));
 
             $dateCreated = $faker->dateTimeBetween("-1 month", "now");
             $wish->setDateCreated(\DateTimeImmutable::createFromMutable($dateCreated));
@@ -46,6 +49,6 @@ class WishFixtures extends Fixture implements DependentFixtureInterface
 
     public function getDependencies()
     {
-        return [CategoryFixtures::class];
+        return [CategoryFixtures::class, UserFixtures::class];
     }
 }

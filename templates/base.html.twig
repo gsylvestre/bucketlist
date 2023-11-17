@@ -19,8 +19,8 @@
         <link rel="icon" href="{{ asset('img/bucket-logo.png') }}">
     </head>
     <body class="d-flex flex-column">
-        <header>
-            <nav class="navbar navbar-expand-lg bg-light">
+        <header class="container">
+            <nav class="navbar navbar-expand-lg">
                 <div class="container-fluid">
                     <a href="{{ path('main_home') }}" title="Go back home" class="navbar-brand">
                         <h1><img src="{{ asset('img/bucket-logo.png') }}" alt="Bucket-List logo"> Bucket-List</h1>
@@ -31,23 +31,35 @@
                     <div class="collapse navbar-collapse" id="navbarSupportedContent">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
-                                <a class="nav-link active" aria-current="page" href="{{ path('main_home') }}">Home</a>
+                                <a class="nav-link" aria-current="page" href="{{ path('main_home') }}">Home</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link active" aria-current="page" href="{{ path('main_about') }}">About us</a>
+                                <a class="nav-link" aria-current="page" href="{{ path('main_about') }}">About us</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link active" aria-current="page" href="{{ path('wish_list') }}">All wishes</a>
+                                <a class="nav-link" aria-current="page" href="{{ path('wish_list') }}">All wishes</a>
                             </li>
-                            <li class="nav-item">
-                                <a class="nav-link active" aria-current="page" href="{{ path('wish_create') }}">Add yours!</a>
-                            </li>
+                            {% if app.user %}
+                                <li class="nav-item">
+                                    <a class="nav-link" aria-current="page" href="{{ path('wish_create') }}">Add yours!</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" aria-current="page" href="{{ path('app_logout') }}">Logout ({{ app.user.username }})</a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item">
+                                    <a class="nav-link" aria-current="page" href="{{ path('app_login') }}">Login</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" aria-current="page" href="{{ path('app_register') }}">Register</a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>
             </nav>
         </header>
-        <main class="flex-grow-1">
+        <main class="flex-grow-1 container">
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
                     <div class="alert alert-{{ label }} my-3">{{ message }}</div>
@@ -55,7 +67,7 @@
             {% endfor %}
             {% block body %}{% endblock %}
         </main>
-        <footer class="text-center my-2">
+        <footer class="text-center my-2 container">
             &copy; Bucket-List {{ "now"|date("Y") }}
         </footer>
     </body>

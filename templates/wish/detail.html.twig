@@ -19,11 +19,15 @@
 
     {# affiche tous les détails de l'idée #}
     <div>{{ wish.description|nl2br }}</div>
-    <div>Wish created by {{ wish.author }} on {{ wish.dateCreated|date("Y-m-d") }}</div>
+    <div>Wish created by {{ wish.creator.username }} on {{ wish.dateCreated|date("Y-m-d") }}</div>
 
     <div>
+        {% if app.user == wish.creator %}
         <a href="{{ path('wish_edit', {'id': wish.id}) }}" class="btn btn-warning">Edit</a>
+        {% endif %}
+        {% if app.user == wish.creator or is_granted("ROLE_ADMIN") %}
         <a href="{{ path('wish_delete', {'id': wish.id, 'token': csrf_token('delete-token-'~wish.id)}) }}" class="btn btn-danger">Delete</a>
+        {% endif %}
     </div>
 {% endblock %}
 
