@@ -7,6 +7,8 @@ use App\Entity\Wish;
 use App\Form\CommentType;
 use App\Form\WishType;
 use App\Repository\WishRepository;
+use App\Util\Censurator;
+use App\Util\Uploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -64,7 +66,12 @@ class WishController extends AbstractController
     }
 
     #[Route('/create', name: 'wish_create', methods: ["GET", "POST"])]
-    public function create(Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
+    public function create(
+        Request $request,
+        EntityManagerInterface $em,
+        Uploader $uploader,
+        Censurator $censurator,
+    ): Response
     {
         $wish = new Wish();
         $wishForm = $this->createForm(WishType::class, $wish);
@@ -75,23 +82,14 @@ class WishController extends AbstractController
 
             /** @var UploadedFile $uploadedImage */
             $uploadedImage = $wishForm->get('file')->getData();
-            if($uploadedImage){
-                $originalFilename = pathinfo($uploadedImage->getClientOriginalName(), PATHINFO_FILENAME);
-                // this is needed to safely include the file name as part of the URL
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedImage->guessExtension();
-
-                try {
-                    $uploadedImage->move($this->getParameter('upload_directory'), $newFilename);
-                    $wish->setFilename($newFilename);
-                } catch(FileException $exception)
-                {
-                    dd($exception);
-                }
-            }
+            $newFilename = $uploader->upload($uploadedImage);
+            $wish->setFilename($newFilename);
 
             //on donne en créateur l'utilisateur actuellement connecté
             $wish->setCreator($this->getUser());
+
+            //censure les textes
+            $wish->setDescription($censurator->purify($wish->getDescription()));
 
             $em->persist($wish);
             $em->flush();
@@ -106,7 +104,13 @@ class WishController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'wish_edit', methods: ["GET", "POST"])]
-    public function edit(Wish $wish, Request $request, EntityManagerInterface $em, SluggerInterface $slugger): Response
+    public function edit(
+        Wish $wish,
+        Request $request,
+        EntityManagerInterface $em,
+        Censurator $censurator,
+        Uploader $uploader,
+    ): Response
     {
         if (!$this->getUser()){
             throw $this->createAccessDeniedException("nope");
@@ -131,20 +135,11 @@ class WishController extends AbstractController
 
             /** @var UploadedFile $uploadedImage */
             $uploadedImage = $wishForm->get('file')->getData();
-            if($uploadedImage){
-                $originalFilename = pathinfo($uploadedImage->getClientOriginalName(), PATHINFO_FILENAME);
-                // this is needed to safely include the file name as part of the URL
-                $safeFilename = $slugger->slug($originalFilename);
-                $newFilename = $safeFilename.'-'.uniqid().'.'.$uploadedImage->guessExtension();
+            $newFilename = $uploader->upload($uploadedImage);
+            $wish->setFilename($newFilename);
 
-                try {
-                    $uploadedImage->move($this->getParameter('upload_directory'), $newFilename);
-                    $wish->setFilename($newFilename);
-                } catch(FileException $exception)
-                {
-                    dd($exception);
-                }
-            }
+            //censure les textes
+            $wish->setDescription($censurator->purify($wish->getDescription()));
 
             $em->persist($wish);
             $em->flush();
