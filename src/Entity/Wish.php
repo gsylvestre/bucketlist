@@ -2,20 +2,32 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Repository\WishRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
+#[ApiResource(
+    operations: [
+        new Get(),
+        new GetCollection()
+    ],
+    normalizationContext: ['groups' => ['getWish']]
+)]
 #[UniqueEntity("title", message: "This idea already exists!")]
 #[ORM\Entity(repositoryClass: WishRepository::class)]
 class Wish
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
+    #[Groups(['getWish'])]
     #[ORM\Column]
     private ?int $id = null;
 
@@ -24,6 +36,7 @@ class Wish
         min: 5, minMessage: "too short!",
         max: 180, maxMessage: "too long! max 180..."
     )]
+    #[Groups(['getWish'])]
     #[ORM\Column(length: 180)]
     private ?string $title = null;
 
@@ -31,6 +44,7 @@ class Wish
         min: 5, minMessage: "too short!",
         max: 2000, maxMessage: "too long! max 2000..."
     )]
+    #[Groups(['getWish'])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -38,6 +52,7 @@ class Wish
     private ?bool $isPublished = null;
 
     #[ORM\Column]
+    #[Groups(['getWish'])]
     private ?\DateTimeImmutable $dateCreated = null;
 
     #[ORM\Column(nullable: true)]
@@ -47,13 +62,16 @@ class Wish
     private ?string $filename = null;
 
     #[ORM\ManyToOne(inversedBy: 'wishes')]
+    #[Groups(['getWish'])]
     private ?Category $category = null;
 
     #[ORM\ManyToOne(inversedBy: 'wishes')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['getWish'])]
     private ?User $creator = null;
 
     #[ORM\OneToMany(mappedBy: 'wish', targetEntity: Comment::class)]
+    #[Groups(['getWish'])]
     private Collection $comments;
 
     public function __construct()
