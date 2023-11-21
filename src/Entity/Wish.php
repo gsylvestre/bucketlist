@@ -62,6 +62,7 @@ class Wish
     private ?string $filename = null;
 
     #[ORM\ManyToOne(inversedBy: 'wishes')]
+    #[Assert\NotBlank()]
     #[Groups(['getWish'])]
     private ?Category $category = null;
 

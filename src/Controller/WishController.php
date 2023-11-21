@@ -82,8 +82,10 @@ class WishController extends AbstractController
 
             /** @var UploadedFile $uploadedImage */
             $uploadedImage = $wishForm->get('file')->getData();
-            $newFilename = $uploader->upload($uploadedImage);
-            $wish->setFilename($newFilename);
+            if ($uploadedImage) {
+                $newFilename = $uploader->upload($uploadedImage);
+                $wish->setFilename($newFilename);
+            }
 
             //on donne en créateur l'utilisateur actuellement connecté
             $wish->setCreator($this->getUser());
